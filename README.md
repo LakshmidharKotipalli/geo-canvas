@@ -1,7 +1,5 @@
 # 🌍 GeoCanvas
 
-[![GitHub stars](https://img.shields.io/github/stars/LakshmidharKotipalli/geo-canvas?style=for-the-badge)](https://github.com/LakshmidharKotipalli/geo-canvas/stargazers)
-
 **Transform any real-world location into AI-generated art.** GeoCanvas fetches Google Street View imagery for given coordinates, extracts depth and edge maps, and generates stylized images using **Stable Diffusion XL** with **multi-ControlNet conditioning** to preserve spatial structure.
 
 ---
