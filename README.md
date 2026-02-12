@@ -1,201 +1,143 @@
-# GeoCanvas
+# 🌍 GeoCanvas
 
-Transform any real-world location into AI-generated art. GeoCanvas fetches Google Street View imagery for given coordinates, extracts depth and edge maps, then generates stylized images using Stable Diffusion XL with multi-ControlNet conditioning to preserve spatial structure.
+[![GitHub stars](https://img.shields.io/github/stars/LakshmidharKotipalli/geo-canvas?style=for-the-badge)](https://github.com/LakshmidharKotipalli/geo-canvas/stargazers)
+[![License](https://img.shields.io/github/license/LakshmidharKotipalli/geo-canvas?style=for-the-badge)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-## Architecture
+**Transform any real-world location into AI-generated art.** GeoCanvas fetches Google Street View imagery for given coordinates, extracts depth and edge maps, and generates stylized images using **Stable Diffusion XL** with **multi-ControlNet conditioning** to preserve spatial structure.
 
+---
+
+## ✨ Key Features
+
+- **📍 Global Exploration**: Pick any location on an interactive Leaflet map.
+- **🖼️ Street View Integration**: Real-world imagery via Google Street View Static API.
+- **🤖 Dual-ControlNet Pipeline**:
+  - **MiDaS Depth Estimation**: Preserves 3D spatial relationships.
+  - **Canny Edge Detection**: Maintains architectural lines and structural boundaries.
+- **🎨 Creative Control**: Use professional presets (Cyberpunk, Watercolor, Cinematic) or write your own prompts.
+- **⚡ Performance Optimized**: FP16 precision, lazy model loading, and GPU memory offloading.
+- **🛠️ Zero-Config Demo Mode**: Works without Google API keys for quick testing.
+
+---
+
+## 🏗️ Technical Architecture
+
+### Why ControlNet?
+Unlike standard `img2img` which is tightly coupled to original colors, **ControlNet** provides structural conditioning. This allows GeoCanvas to transform a daytime street photo into a neon-lit cyberpunk city while keeping buildings and roads in their exact real-world positions.
+
+```mermaid
+graph TD
+    A[Interactive Map] -->|Coordinates| B[Street View API]
+    B -->|Original Image| C[Preprocessing]
+    C -->|MiDaS| D[Depth Map]
+    C -->|Canny| E[Edge Map]
+    D --> F[Multi-ControlNet SDXL]
+    E --> F
+    G[User Prompt] --> F
+    F --> H[Final Stylized Art]
 ```
-geo-canvas/
-├── backend/                     # FastAPI Python backend
-│   ├── app/
-│   │   ├── main.py              # App entry, CORS, route registration
-│   │   ├── config.py            # Environment settings and model IDs
-│   │   ├── routers/
-│   │   │   ├── streetview.py    # POST /api/streetview
-│   │   │   ├── preprocess.py    # POST /api/preprocess
-│   │   │   └── generate.py     # POST /api/generate
-│   │   └── services/
-│   │       ├── streetview_service.py  # Google Maps API + demo fallback
-│   │       ├── preprocessing.py       # MiDaS depth + Canny edges
-│   │       └── generation.py          # SDXL + ControlNet pipeline
-│   ├── requirements.txt
-│   └── .env.example
-├── frontend/                    # Next.js + TypeScript + Tailwind
-│   └── src/
-│       ├── app/
-│       │   ├── page.tsx         # Main page orchestrating the pipeline
-│       │   ├── layout.tsx       # Root layout
-│       │   └── globals.css      # Global styles + Leaflet dark theme
-│       ├── components/
-│       │   ├── MapPicker.tsx    # Interactive Leaflet map
-│       │   ├── PromptPanel.tsx  # Prompt input, presets, controls
-│       │   ├── ImagePreview.tsx # Street view / depth / edge previews
-│       │   ├── GeneratedResult.tsx  # Final output display
-│       │   └── Header.tsx       # App header with GPU status
-│       └── lib/
-│           └── api.ts           # Typed API client
-├── start.sh                     # Launch both servers
-└── README.md
-```
 
-## Prerequisites
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
 
 - **Python 3.10+**
 - **Node.js 18+**
-- **NVIDIA GPU with 12GB+ VRAM** (recommended for SDXL + ControlNet)
-  - CPU mode works but is significantly slower
-- **Google Maps API key** (optional — demo mode works without one)
+- **NVIDIA GPU** (12GB+ VRAM recommended for SDXL)
 
-## Setup
-
-### 1. Clone and navigate
+### 1. Clone & Setup
 
 ```bash
-cd "geo canvas"
+git clone https://github.com/LakshmidharKotipalli/geo-canvas.git
+cd geo-canvas
 ```
 
-### 2. Backend
+### 2. Backend Installation
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-Create your `.env` file:
-
-```bash
 cp .env.example .env
 ```
 
-Edit `.env` and add your keys:
+*Edit `.env` to add your optional `GOOGLE_MAPS_API_KEY`.*
 
-```env
-GOOGLE_MAPS_API_KEY=your_key_here   # Optional — leave empty for demo mode
-DEVICE=cuda                          # Use "cpu" if no GPU available
-```
-
-**Google Maps API key setup** (optional):
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project or select an existing one
-3. Enable the **Street View Static API**
-4. Create an API key under **Credentials**
-5. Paste the key into your `.env` file
-
-### 3. Frontend
+### 3. Frontend Installation
 
 ```bash
-cd frontend
+cd ../frontend
 npm install
 ```
 
-### 4. First run — model downloads
+### 4. Running the Application
 
-On the first run, the backend will download these models (requires internet):
-
-| Model | Size | Purpose |
-|-------|------|---------|
-| `Intel/dpt-large` | ~1.3 GB | MiDaS depth estimation |
-| `stabilityai/stable-diffusion-xl-base-1.0` | ~6.5 GB | SDXL base model |
-| `diffusers/controlnet-depth-sdxl-1.0` | ~2.5 GB | Depth ControlNet |
-| `diffusers/controlnet-canny-sdxl-1.0` | ~2.5 GB | Canny ControlNet |
-| `madebyollin/sdxl-vae-fp16-fix` | ~335 MB | FP16-safe VAE |
-
-Models are cached in `~/.cache/huggingface/` after the first download.
-
-## Running
-
-### Both servers at once
-
+Use the convenience scripts:
 ```bash
 ./start.sh
 ```
+Or run manually:
+- **Backend**: `uvicorn app.main:app --reload --port 8000` (in `backend/`)
+- **Frontend**: `npm run dev` (in `frontend/`)
 
-### Or individually
+---
 
-**Backend** (port 8000):
-```bash
-cd backend
-source venv/bin/activate
-uvicorn app.main:app --reload --port 8000
+## 🛠️ Tech Stack
+
+### AI & Computer Vision
+- **Stable Diffusion XL**: State-of-the-art image generation.
+- **ControlNet (Depth + Canny)**: Structural conditioning.
+- **MiDaS (DPT-Large)**: Monocular depth estimation.
+- **OpenCV**: Edge detection and image processing.
+- **HuggingFace Diffusers**: ML pipeline orchestration.
+
+### Web Stack
+- **FastAPI**: High-performance Python backend.
+- **Next.js 15**: React framework for the frontend.
+- **TypeScript**: Type-safe development across the stack.
+- **Tailwind CSS**: Modern utility-first styling.
+- **Leaflet**: Open-source interactive maps.
+
+---
+
+## 📂 Project Structure
+
+```text
+geo-canvas/
+├── backend/                # FastAPI Python backend
+│   ├── app/                # Core logic, routers, and services
+│   └── requirements.txt    # Python dependencies
+├── frontend/               # Next.js + TypeScript frontend
+│   ├── src/app/            # Application routes
+│   └── src/components/     # Reusable UI components
+├── start.sh                # Launch script
+└── README.md               # You are here
 ```
 
-**Frontend** (port 3000):
-```bash
-cd frontend
-npm run dev
-```
+---
 
-Open **http://localhost:3000** in your browser.
+## 🤝 Contributing
 
-## Usage
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-1. **Select a location** — Click on the map, use the search bar, or enter coordinates manually
-2. **Adjust camera** — Set heading (0-360°), pitch (-90 to 90°), and field of view
-3. **Fetch Street View** — Click the button to retrieve the street view image
-4. **Write a prompt** — Describe your creative vision (e.g., "a cyberpunk city at night")
-5. **Choose presets** — Pick a style, weather condition, and time of day
-6. **Generate** — The pipeline will:
-   - Extract a depth map (MiDaS) and edge map (Canny) from the street view
-   - Feed both into SDXL with multi-ControlNet conditioning
-   - Output a stylized image that preserves the location's spatial structure
-7. **Download** — Click the download button on the result
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git checkout -b feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Advanced settings
+---
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| Steps | 30 | Denoising steps (higher = more detail, slower) |
-| Guidance Scale | 7.5 | Prompt adherence (higher = more literal) |
-| Depth ControlNet | 0.8 | Strength of depth conditioning |
-| Canny ControlNet | 0.5 | Strength of edge conditioning |
-| Seed | Random | Set a seed for reproducible results |
-| Negative Prompt | (preset) | Things to exclude from generation |
+## 📜 License
 
-## API Endpoints
+Distributed under the MIT License. See `LICENSE` for more information.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/health` | Server status + GPU info |
-| `POST` | `/api/streetview` | Fetch street view image for coordinates |
-| `POST` | `/api/preprocess` | Extract depth map + edge map from image |
-| `POST` | `/api/generate` | Generate image with SDXL + ControlNet |
+---
 
-### Example: fetch street view
-
-```bash
-curl -X POST http://localhost:8000/api/streetview \
-  -H "Content-Type: application/json" \
-  -d '{"lat": 48.8584, "lng": 2.2945, "heading": 180}'
-```
-
-### Example: generate
-
-```bash
-curl -X POST http://localhost:8000/api/generate \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "cyberpunk city, neon lights, rain",
-    "depth_map_base64": "<base64>",
-    "edge_map_base64": "<base64>",
-    "num_inference_steps": 30
-  }'
-```
-
-## Troubleshooting
-
-| Issue | Fix |
-|-------|-----|
-| `CUDA out of memory` | Reduce image size to 768x768, lower steps, or use CPU mode |
-| `Backend offline` in header | Ensure the backend is running on port 8000 |
-| Street view shows "Demo Mode" | Add a valid `GOOGLE_MAPS_API_KEY` to `.env` |
-| Models downloading slowly | First run downloads ~13GB of models — this is expected |
-| `xformers` not found | Optional — the app works without it, just uses more VRAM |
-| Map not loading | Check internet connection (tiles load from OpenStreetMap) |
-
-## Tech Stack
-
-- **Backend**: FastAPI, PyTorch, HuggingFace Diffusers, Transformers, OpenCV
-- **Frontend**: Next.js 16, React, TypeScript, Tailwind CSS, Leaflet
-- **AI Models**: Stable Diffusion XL, ControlNet (depth + canny), MiDaS DPT-Large
+*Built with ❤️ by [Lakshmidhar Kotipalli](https://github.com/LakshmidharKotipalli)*
