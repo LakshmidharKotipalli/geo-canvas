@@ -1,11 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Header from "@/components/Header";
 import PromptPanel from "@/components/PromptPanel";
 import GeneratedResult from "@/components/GeneratedResult";
-import { api, GenerateResponse } from "@/lib/api";
+import { api, GenerateResponse, StreetViewResponse } from "@/lib/api";
 
 const MapPicker = dynamic(() => import("@/components/MapPicker"), { ssr: false });
 
@@ -50,6 +50,32 @@ export default function Home() {
   const [generatedResult, setGeneratedResult] = useState<GenerateResponse | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [streetViewResult, setStreetViewResult] = useState<StreetViewResponse | null>(null);
+  const [isFetchingStreetView, setIsFetchingStreetView] = useState(false);
+  const streetViewDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchStreetView = useCallback(async (newLat: number, newLng: number) => {
+    setIsFetchingStreetView(true);
+    setStreetViewResult(null);
+    try {
+      const result = await api.streetview({ lat: newLat, lng: newLng });
+      setStreetViewResult(result);
+    } catch {
+      // Street view fetch failure is non-fatal — just clear the preview
+      setStreetViewResult(null);
+    } finally {
+      setIsFetchingStreetView(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (streetViewDebounceRef.current) clearTimeout(streetViewDebounceRef.current);
+    streetViewDebounceRef.current = setTimeout(() => fetchStreetView(lat, lng), 600);
+    return () => {
+      if (streetViewDebounceRef.current) clearTimeout(streetViewDebounceRef.current);
+    };
+  }, [lat, lng, fetchStreetView]);
 
   const handleLocationChange = useCallback((newLat: number, newLng: number) => {
     setLat(newLat);
@@ -109,7 +135,7 @@ export default function Home() {
           <PromptPanel
             onGenerate={handleGenerate}
             isGenerating={isGenerating}
-            isFetching={false}
+            isFetching={isFetchingStreetView}
             isPreprocessing={false}
             locationName={locationName}
             promptOverride={promptOverride}
@@ -122,6 +148,8 @@ export default function Home() {
               result={generatedResult}
               isGenerating={isGenerating}
               error={error}
+              streetViewResult={streetViewResult}
+              isFetchingStreetView={isFetchingStreetView}
             />
           </div>
         </main>

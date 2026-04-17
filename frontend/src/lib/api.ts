@@ -28,6 +28,23 @@ export interface HealthResponse {
   gpu_name: string | null;
 }
 
+export interface StreetViewRequest {
+  lat: number;
+  lng: number;
+  heading?: number;
+  pitch?: number;
+  fov?: number;
+}
+
+export interface StreetViewResponse {
+  image_base64: string;
+  width: number;
+  height: number;
+  lat: number;
+  lng: number;
+  demo?: boolean;
+}
+
 async function apiRequest<T>(endpoint: string, body?: unknown): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: body ? "POST" : "GET",
@@ -45,6 +62,9 @@ async function apiRequest<T>(endpoint: string, body?: unknown): Promise<T> {
 
 export const api = {
   health: () => apiRequest<HealthResponse>("/health"),
+
+  streetview: (params: StreetViewRequest) =>
+    apiRequest<StreetViewResponse>("/streetview", params),
 
   generate: (params: GenerateRequest) =>
     apiRequest<GenerateResponse>("/generate", params),
