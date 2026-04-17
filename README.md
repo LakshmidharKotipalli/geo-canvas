@@ -94,11 +94,6 @@ geo-canvas/
 └── README.md
 ```
 
----
-
-## License
-
-MIT — see `LICENSE`.
 
 ---
 
