@@ -1,137 +1,111 @@
-# 🌍 GeoCanvas
+# GeoCanvas
 
-**Transform any real-world location into AI-generated art.** GeoCanvas fetches Google Street View imagery for given coordinates, extracts depth and edge maps, and generates stylized images using **Stable Diffusion XL** with **multi-ControlNet conditioning** to preserve spatial structure.
+**Pick any location on Earth. Describe what you want. Get an AI-generated image grounded in that real place.**
 
----
-
-## ✨ Key Features
-
-- **📍 Global Exploration**: Pick any location on an interactive Leaflet map.
-- **🖼️ Street View Integration**: Real-world imagery via Google Street View Static API.
-- **🤖 Dual-ControlNet Pipeline**:
-  - **MiDaS Depth Estimation**: Preserves 3D spatial relationships.
-  - **Canny Edge Detection**: Maintains architectural lines and structural boundaries.
-- **🎨 Creative Control**: Use professional presets (Cyberpunk, Watercolor, Cinematic) or write your own prompts.
-- **⚡ Performance Optimized**: FP16 precision, lazy model loading, and GPU memory offloading.
-- **🛠️ Zero-Config Demo Mode**: Works without Google API keys for quick testing.
+GeoCanvas fetches a Google Street View image for the coordinates you choose, extracts a depth map and edge map from it, then feeds all three into a Stable Diffusion XL pipeline with dual ControlNet conditioning — so the generated image preserves the real spatial structure of the location.
 
 ---
 
-## 🏗️ Technical Architecture
+## How It Works
 
-### Why ControlNet?
-Unlike standard `img2img` which is tightly coupled to original colors, **ControlNet** provides structural conditioning. This allows GeoCanvas to transform a daytime street photo into a neon-lit cyberpunk city while keeping buildings and roads in their exact real-world positions.
+1. **Pick a location** on the interactive map (or search by name / paste coordinates)
+2. **Write a prompt** — the location name is pre-filled automatically, edit freely
+3. **Click Generate** — the app runs three stages in sequence:
+   - Fetches a Street View image for the coordinates
+   - Extracts a MiDaS depth map and Canny edge map
+   - Generates the final image using SDXL + dual ControlNet
 
-```mermaid
-graph TD
-    A[Interactive Map] -->|Coordinates| B[Street View API]
-    B -->|Original Image| C[Preprocessing]
-    C -->|MiDaS| D[Depth Map]
-    C -->|Canny| E[Edge Map]
-    D --> F[Multi-ControlNet SDXL]
-    E --> F
-    G[User Prompt] --> F
-    F --> H[Final Stylized Art]
+```
+Map coordinates → Street View → Depth + Edge maps → SDXL + ControlNet → Generated image
 ```
 
 ---
 
-## 🚀 Getting Started
+## Tech Stack
+
+### AI / Computer Vision
+- **Stable Diffusion XL** — image generation
+- **ControlNet (Depth + Canny)** — structural conditioning so generated images respect real-world geometry
+- **MiDaS (DPT-Large)** — monocular depth estimation
+- **OpenCV** — Canny edge detection
+- **HuggingFace Diffusers** — pipeline orchestration
+
+### Web
+- **FastAPI** — Python backend
+- **Next.js 15 / React 19** — frontend
+- **TypeScript** — end-to-end type safety
+- **Tailwind CSS** — styling
+- **Leaflet** — interactive maps
+- **Nominatim** — reverse geocoding for automatic location-aware prompts
+
+---
+
+## Getting Started
 
 ### Prerequisites
+- Python 3.10+
+- Node.js 18+
+- NVIDIA GPU with 12GB+ VRAM (recommended for SDXL)
 
-- **Python 3.10+**
-- **Node.js 18+**
-- **NVIDIA GPU** (12GB+ VRAM recommended for SDXL)
-
-### 1. Clone & Setup
+### 1. Clone
 
 ```bash
 git clone https://github.com/LakshmidharKotipalli/geo-canvas.git
 cd geo-canvas
 ```
 
-### 2. Backend Installation
+### 2. Backend
 
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env
+cp .env.example .env       # optionally add GOOGLE_MAPS_API_KEY
 ```
 
-*Edit `.env` to add your optional `GOOGLE_MAPS_API_KEY`.*
-
-### 3. Frontend Installation
+### 3. Frontend
 
 ```bash
 cd ../frontend
 npm install
 ```
 
-### 4. Running the Application
+### 4. Run
 
-Use the convenience scripts:
 ```bash
-./start.sh
+# Backend
+cd backend && uvicorn app.main:app --reload --port 8000
+
+# Frontend (separate terminal)
+cd frontend && npm run dev
 ```
-Or run manually:
-- **Backend**: `uvicorn app.main:app --reload --port 8000` (in `backend/`)
-- **Frontend**: `npm run dev` (in `frontend/`)
+
+Open [http://localhost:3000](http://localhost:3000).
+
+> **Demo mode**: The app works without a Google Maps API key — Street View falls back to a demo image so you can test the full pipeline.
 
 ---
 
-## 🛠️ Tech Stack
+## Project Structure
 
-### AI & Computer Vision
-- **Stable Diffusion XL**: State-of-the-art image generation.
-- **ControlNet (Depth + Canny)**: Structural conditioning.
-- **MiDaS (DPT-Large)**: Monocular depth estimation.
-- **OpenCV**: Edge detection and image processing.
-- **HuggingFace Diffusers**: ML pipeline orchestration.
-
-### Web Stack
-- **FastAPI**: High-performance Python backend.
-- **Next.js 15**: React framework for the frontend.
-- **TypeScript**: Type-safe development across the stack.
-- **Tailwind CSS**: Modern utility-first styling.
-- **Leaflet**: Open-source interactive maps.
-
----
-
-## 📂 Project Structure
-
-```text
+```
 geo-canvas/
-├── backend/                # FastAPI Python backend
-│   ├── app/                # Core logic, routers, and services
-│   └── requirements.txt    # Python dependencies
-├── frontend/               # Next.js + TypeScript frontend
-│   ├── src/app/            # Application routes
-│   └── src/components/     # Reusable UI components
-├── start.sh                # Launch script
-└── README.md               # You are here
+├── backend/
+│   ├── app/               # FastAPI routes and ML pipeline services
+│   └── requirements.txt
+├── frontend/
+│   ├── src/app/           # Next.js app router
+│   └── src/components/    # MapPicker, PromptPanel, GeneratedResult
+└── README.md
 ```
 
 ---
 
-## 🤝 Contributing
+## License
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git checkout -b feature/AmazingFeature`)
-5. Open a Pull Request
+MIT — see `LICENSE`.
 
 ---
 
-## 📜 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
----
-
-*Built with ❤️ by [Lakshmidhar Kotipalli](https://github.com/LakshmidharKotipalli)*
+*Built by [Lakshmidhar Kotipalli](https://github.com/LakshmidharKotipalli)*

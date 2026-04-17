@@ -52,21 +52,7 @@ export default function GeneratedResult({
       </div>
 
       {result && !isGenerating && (
-        <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-zinc-500">
-          <span className="bg-zinc-800 px-2 py-1 rounded">
-            {result.steps} steps
-          </span>
-          <span className="bg-zinc-800 px-2 py-1 rounded">
-            CFG {result.guidance_scale}
-          </span>
-          <span className="bg-zinc-800 px-2 py-1 rounded">
-            Depth: {result.controlnet_scale[0]} | Canny: {result.controlnet_scale[1]}
-          </span>
-          {result.seed !== null && (
-            <span className="bg-zinc-800 px-2 py-1 rounded">
-              Seed: {result.seed}
-            </span>
-          )}
+        <div className="mt-3">
           <button
             onClick={() => {
               const link = document.createElement("a");
@@ -74,7 +60,7 @@ export default function GeneratedResult({
               link.download = "geocanvas-result.png";
               link.click();
             }}
-            className="bg-violet-600/20 text-violet-400 px-2 py-1 rounded hover:bg-violet-600/30 transition-colors cursor-pointer"
+            className="bg-violet-600/20 text-violet-400 text-[11px] px-3 py-1.5 rounded hover:bg-violet-600/30 transition-colors cursor-pointer"
           >
             Download
           </button>

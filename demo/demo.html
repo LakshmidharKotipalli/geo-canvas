@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoCanvas &mdash; Live Demo</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#09090b;color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh}
+header{border-bottom:1px solid #27272a;background:#09090b;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;height:48px}
+.logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.app-name{font-size:17px;font-weight:600;letter-spacing:-0.02em;color:#f4f4f5}
+.app-tag{font-size:12px;color:#71717a}
+.hdr-r{display:flex;align-items:center;gap:8px;font-size:12px;color:#a1a1aa}
+.dot{width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block}
+.app-body{display:flex;flex:1;overflow:hidden}
+aside{width:380px;flex-shrink:0;border-right:1px solid #27272a;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:18px;padding-bottom:40px}
+aside::-webkit-scrollbar{width:4px}
+aside::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:2px}
+main{flex:1;overflow-y:auto;padding:24px}
+main::-webkit-scrollbar{width:4px}
+main::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:2px}
+.mi{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.st{font-size:13px;font-weight:600;color:#d4d4d8}
+.su{font-size:11px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+#map{width:100%;height:200px;border-radius:8px;overflow:hidden;border:1px solid #3f3f46;margin-bottom:8px}
+.mr{display:flex;gap:8px;margin-bottom:8px}
+.sin{flex:1;background:#27272a;border:1px solid #3f3f46;border-radius:8px;padding:8px 12px;font-size:13px;color:#e4e4e7;outline:none;transition:border-color .15s}
+.sin:focus{border-color:#7c3aed}
+.sin::placeholder{color:#52525b}
+.bts{padding:8px 14px;background:#7c3aed;color:#fff;font-size:13px;border:none;border-radius:8px;cursor:pointer;white-space:nowrap}
+.bts:hover{background:#8b5cf6}
+.cs{display:flex;gap:8px}
+.cg{flex:1}
+.cl{font-size:11px;color:#71717a;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px}
+.ci{width:100%;background:#27272a;border:1px solid #3f3f46;border-radius:6px;padding:6px 8px;font-size:12px;font-family:monospace;color:#e4e4e7;outline:none}
+.ci:focus{border-color:#7c3aed}
+.dv{height:1px;background:#27272a;margin:0 -16px}
+textarea.pr{width:100%;background:#27272a;border:1px solid #3f3f46;border-radius:8px;padding:10px 12px;font-size:13px;color:#e4e4e7;outline:none;resize:none;line-height:1.5;transition:border-color .15s;font-family:inherit}
+textarea.pr:focus{border-color:#7c3aed}
+textarea.pr::placeholder{color:#52525b}
+.ssm{width:12px;height:12px;border:2px solid #7c3aed;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;display:inline-block;flex-shrink:0}
+.lr{display:flex;align-items:center;gap:8px}
+.lt{font-size:12px;color:#a78bfa}
+.rw{aspect-ratio:1/1;border-radius:8px;overflow:hidden;border:1px solid #3f3f46;background:rgba(39,39,42,.5);display:flex;align-items:center;justify-content:center;position:relative}
+.gsp{display:flex;flex-direction:column;align-items:center;gap:16px;z-index:1;position:relative}
+.slg{width:64px;height:64px;position:relative}
+.slg::before{content:'';position:absolute;inset:0;border:4px solid rgba(124,58,237,.2);border-radius:50%}
+.slg::after{content:'';position:absolute;inset:0;border:4px solid #8b5cf6;border-top-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
+.gt2{text-align:center}
+.gt2 p{font-size:13px;color:#d4d4d8}
+.gt2 small{font-size:11px;color:#71717a;display:block;margin-top:4px}
+.dl-btn{margin-top:12px;font-size:11px;padding:4px 10px;border-radius:4px;background:rgba(124,58,237,.2);color:#a78bfa;border:none;cursor:pointer;transition:background .15s}
+.dl-btn:hover{background:rgba(124,58,237,.35)}
+.bg{width:100%;padding:12px;font-size:13px;font-weight:600;border:none;border-radius:8px;cursor:pointer;background:linear-gradient(to right,#7c3aed,#0891b2);color:#fff;transition:opacity .2s}
+.bg:hover:not(:disabled){opacity:.88}
+.bg:disabled{background:linear-gradient(to right,#3f3f46,#3f3f46)!important;color:#52525b!important;cursor:not-allowed}
+.ph{font-size:11px;color:#52525b;text-align:center;padding:8px;line-height:1.4}
+#db{position:fixed;bottom:0;left:0;right:0;background:rgba(9,9,11,.95);border-top:1px solid #27272a;padding:10px 24px;display:flex;align-items:center;gap:16px;z-index:1000;backdrop-filter:blur(12px)}
+.dl{font-size:11px;color:#71717a;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.dbs{display:flex;gap:8px;flex-wrap:wrap}
+.db2{padding:6px 14px;font-size:12px;border-radius:6px;border:1px solid #3f3f46;background:#18181b;color:#d4d4d8;cursor:pointer;transition:all .15s;white-space:nowrap}
+.db2:hover{border-color:#7c3aed;color:#a78bfa;background:rgba(124,58,237,.08)}
+.db2.act{border-color:#7c3aed;color:#a78bfa;background:rgba(124,58,237,.12)}
+.fi{animation:fi .4s ease}
+@keyframes sp{to{transform:rotate(360deg)}}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="hdr-l">
+      <div class="logo">G</div>
+      <span class="app-name">GeoCanvas</span>
+      <span class="app-tag">Location to AI Image</span>
+    </div>
+    <div class="hdr-r">
+      <span class="dot"></span>
+      <span>NVIDIA RTX 4090 &middot; CUDA</span>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <aside>
+      <div>
+        <div class="sh"><span class="st">Select Location</span></div>
+        <div class="mr">
+          <input class="sin" id="sin" type="text" placeholder="Search location..."/>
+          <button class="bts" id="sbtn">Search</button>
+        </div>
+        <div id="map"></div>
+        <div class="cs">
+          <div class="cg"><span class="cl">Lat</span><input class="ci" id="lat" type="text" value="48.858400"/></div>
+          <div class="cg"><span class="cl">Lng</span><input class="ci" id="lng" type="text" value="2.294500"/></div>
+        </div>
+      </div>
+
+      <div class="dv"></div>
+
+      <div>
+        <div class="su">Prompt</div>
+        <textarea class="pr" id="pr" rows="4" placeholder="Pick a location — a prompt will be suggested automatically"></textarea>
+      </div>
+
+      <button class="bg" id="gb" onclick="runPipelineBtn()">Generate from Location</button>
+    </aside>
+
+    <main>
+      <div class="mi">
+        <div>
+          <div class="sh">
+            <span class="st">Generated Result</span>
+            <div class="lr" id="lr" style="display:none">
+              <span class="ssm"></span>
+              <span class="lt" id="lt"></span>
+            </div>
+          </div>
+          <div class="rw" id="rc">
+            <div class="ph">Pick a location and click Generate</div>
+          </div>
+          <div id="dl-wrap" style="display:none">
+            <button class="dl-btn" id="dl-btn">&#8595; Download</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="db">
+  <span class="dl">Try a location &rarr;</span>
+  <div class="dbs">
+    <button class="db2" onclick="loadScenario(0)">&#x1F5FC; Paris</button>
+    <button class="db2" onclick="loadScenario(1)">&#x1F306; New York</button>
+    <button class="db2" onclick="loadScenario(2)">&#x1F3EF; Tokyo</button>
+    <button class="db2" onclick="loadScenario(3)">&#x1F301; London</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── MAP ──────────────────────────────────────────────────────────────────────
+let map, marker;
+function initMap(lat, lng) {
+  if (map) { map.remove(); map = null; }
+  map = L.map('map', { center: [lat, lng], zoom: 15, zoomControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '\u00A9 OpenStreetMap', maxZoom: 19 }).addTo(map);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  const icon = L.divIcon({
+    html: '<div style="width:22px;height:22px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)"></div>',
+    iconSize:[22,22], iconAnchor:[11,11], className:''
+  });
+  marker = L.marker([lat, lng], { icon, draggable: true }).addTo(map);
+  marker.on('dragend', () => {
+    const pos = marker.getLatLng();
+    document.getElementById('lat').value = pos.lat.toFixed(6);
+    document.getElementById('lng').value = pos.lng.toFixed(6);
+    suggestPrompt(pos.lat, pos.lng);
+  });
+  map.on('click', e => {
+    marker.setLatLng(e.latlng);
+    document.getElementById('lat').value = e.latlng.lat.toFixed(6);
+    document.getElementById('lng').value = e.latlng.lng.toFixed(6);
+    suggestPrompt(e.latlng.lat, e.latlng.lng);
+  });
+}
+initMap(48.8584, 2.2945);
+
+function panMap(lat, lng) {
+  if (!map || !marker) return;
+  marker.setLatLng([lat, lng]);
+  map.flyTo([lat, lng], 15, { duration: 1.2 });
+  document.getElementById('lat').value = lat.toFixed(6);
+  document.getElementById('lng').value = lng.toFixed(6);
+}
+
+document.getElementById('sbtn').onclick = async function() {
+  const q = document.getElementById('sin').value.trim();
+  if (!q) return;
+  try {
+    const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q) + '&limit=1');
+    const d = await r.json();
+    if (d.length) {
+      const newLat = parseFloat(d[0].lat), newLng = parseFloat(d[0].lon);
+      panMap(newLat, newLng);
+      document.getElementById('pr').dataset.manual = '';
+      suggestPrompt(newLat, newLng);
+    }
+  } catch(e) {}
+};
+document.getElementById('sin').onkeydown = e => { if(e.key==='Enter') document.getElementById('sbtn').click(); };
+
+// ── SCENARIOS ────────────────────────────────────────────────────────────────
+const SCENARIOS = [
+  {
+    name: 'Paris \u2014 Eiffel Tower', lat: 48.8584, lng: 2.2945,
+    prompt: 'Futuristic solarpunk city, lush vertical gardens wrapping around sleek glass skyscrapers, highly detailed cinematic concept art, golden hour lighting',
+    genUrl: 'images/paris.png',
+  },
+  {
+    name: 'New York \u2014 Times Square', lat: 40.758, lng: -73.9855,
+    prompt: 'Overgrown with lush green jungle plants and vines, highly detailed concept art, cinematic lighting',
+    genUrl: 'images/new_york.png',
+  },
+  {
+    name: 'Tokyo \u2014 Shibuya Crossing', lat: 35.6598, lng: 139.7004,
+    prompt: 'Rainy neo-noir cyberpunk style, glowing neon signs reflecting on wet pavement, high contrast, visually stunning',
+    genUrl: 'images/tokyo.png',
+  },
+  {
+    name: 'London \u2014 Tower Bridge', lat: 51.5055, lng: -0.0754,
+    prompt: 'Tower bridge spanning across an epic frozen apocalyptic wasteland, snow storms, highly detailed concept art, cinematic dramatic lighting, photorealistic',
+    genUrl: 'images/london.png',
+  },
+];
+
+// ── DOM HELPERS ───────────────────────────────────────────────────────────────
+function clearEl(id){ const e=document.getElementById(id); while(e.firstChild) e.removeChild(e.firstChild); return e; }
+
+function setLoading(show, txt='') {
+  const r=document.getElementById('lr'), t=document.getElementById('lt');
+  r.style.display = show ? 'flex' : 'none';
+  if (txt) t.textContent = txt;
+}
+
+function setResultSpinner() {
+  const card = clearEl('rc');
+  const wrap = document.createElement('div'); wrap.className = 'gsp';
+  const sp = document.createElement('div'); sp.className = 'slg';
+  const gt = document.createElement('div'); gt.className = 'gt2';
+  const p = document.createElement('p'); p.textContent = 'Generating image...';
+  const sm = document.createElement('small'); sm.textContent = 'This may take 30\u201360 seconds on GPU';
+  gt.appendChild(p); gt.appendChild(sm);
+  wrap.appendChild(sp); wrap.appendChild(gt);
+  card.appendChild(wrap);
+  document.getElementById('dl-wrap').style.display = 'none';
+}
+
+function setResultImg(s) {
+  const card = clearEl('rc');
+  if (s) {
+    const img = document.createElement('img');
+    img.src = s.genUrl;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0';
+    if (s.genFilter) img.style.filter = s.genFilter;
+    img.className = 'fi';
+    card.appendChild(img);
+
+    const dlWrap = document.getElementById('dl-wrap');
+    dlWrap.style.display = 'block';
+    document.getElementById('dl-btn').onclick = () => {
+      const a = document.createElement('a');
+      a.href = s.genUrl;
+      a.download = 'geocanvas-result.jpg';
+      a.click();
+    };
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'ph';
+    ph.textContent = 'Pick a location and click Generate';
+    card.appendChild(ph);
+    document.getElementById('dl-wrap').style.display = 'none';
+  }
+}
+
+function setBtnLabel(txt, dis=false) {
+  const b=document.getElementById('gb'); b.textContent=txt; b.disabled=dis;
+}
+
+// ── PIPELINE ─────────────────────────────────────────────────────────────────
+let running=false, curS=null;
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function runPipeline() {
+  if (running) return;
+  running = true;
+
+  setBtnLabel('Generating...', true);
+  setLoading(true, 'Generating image...');
+  setResultSpinner();
+  await sleep(1400);
+  setLoading(false);
+  setResultImg(curS || SCENARIOS[0]);
+  setBtnLabel('Generate from Location', false);
+  running = false;
+}
+
+function runPipelineBtn() {
+  runPipeline();
+}
+window.runPipelineBtn = runPipelineBtn;
+
+// ── LOAD SCENARIO ─────────────────────────────────────────────────────────────
+function loadScenario(idx) {
+  const s=SCENARIOS[idx]; curS=s;
+  document.querySelectorAll('.db2').forEach((b,i)=>b.classList.toggle('act',i===idx));
+  panMap(s.lat, s.lng);
+  const prEl = document.getElementById('pr');
+  prEl.value = s.prompt;
+  prEl.dataset.manual = '';
+}
+window.loadScenario = loadScenario;
+
+// ── LOCATION-AWARE PROMPT ────────────────────────────────────────────────────
+document.getElementById('pr').addEventListener('input', function(){ this.dataset.manual='1'; });
+
+async function suggestPrompt(lat, lng) {
+  try {
+    const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+lat+'&lon='+lng+'&zoom=16&addressdetails=1');
+    const d = await r.json();
+    const addr = d.address || {};
+    const landmark = d.name || addr.attraction || addr.amenity || addr.building || '';
+    const road = addr.road || addr.pedestrian || '';
+    const city = addr.city || addr.town || addr.village || addr.county || '';
+    const country = addr.country || '';
+    const place = [landmark || road, city, country].filter(Boolean).slice(0,2).join(', ');
+    if (!place) return;
+    const pr = document.getElementById('pr');
+    if (!pr.dataset.manual) pr.value = place;
+  } catch(e) {}
+}
+
+setTimeout(()=>loadScenario(0), 900);
+</script>
+</body>
+</html>

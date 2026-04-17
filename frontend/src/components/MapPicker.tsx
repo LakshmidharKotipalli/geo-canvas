@@ -6,9 +6,10 @@ interface MapPickerProps {
   lat: number;
   lng: number;
   onLocationChange: (lat: number, lng: number) => void;
+  onLocationName?: (name: string) => void;
 }
 
-export default function MapPicker({ lat, lng, onLocationChange }: MapPickerProps) {
+export default function MapPicker({ lat, lng, onLocationChange, onLocationName }: MapPickerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -24,8 +25,13 @@ export default function MapPicker({ lat, lng, onLocationChange }: MapPickerProps
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
+    let cancelled = false;
+
     const initMap = async () => {
       const L = (await import("leaflet")).default;
+
+      if (cancelled || !mapRef.current) return;
+      if ((mapRef.current as unknown as { _leaflet_id?: number })._leaflet_id) return;
 
       // Load Leaflet CSS via link tag (avoids TS module resolution issues)
       if (!document.querySelector('link[href*="leaflet"]')) {
@@ -63,11 +69,13 @@ export default function MapPicker({ lat, lng, onLocationChange }: MapPickerProps
       marker.on("dragend", () => {
         const pos = marker.getLatLng();
         onLocationChange(pos.lat, pos.lng);
+        reverseGeocode(pos.lat, pos.lng);
       });
 
       map.on("click", (e: L.LeafletMouseEvent) => {
         marker.setLatLng(e.latlng);
         onLocationChange(e.latlng.lat, e.latlng.lng);
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
       });
 
       mapInstanceRef.current = map;
@@ -77,6 +85,7 @@ export default function MapPicker({ lat, lng, onLocationChange }: MapPickerProps
     initMap();
 
     return () => {
+      cancelled = true;
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -93,6 +102,25 @@ export default function MapPicker({ lat, lng, onLocationChange }: MapPickerProps
     }
   }, [lat, lng]);
 
+  const reverseGeocode = async (newLat: number, newLng: number) => {
+    if (!onLocationName) return;
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${newLat}&lon=${newLng}&zoom=16&addressdetails=1`
+      );
+      const data = await res.json();
+      const addr = data.address || {};
+      const landmark = data.name || addr.attraction || addr.amenity || addr.building || "";
+      const road = addr.road || addr.pedestrian || "";
+      const city = addr.city || addr.town || addr.village || addr.county || "";
+      const country = addr.country || "";
+      const place = [landmark || road, city, country].filter(Boolean).slice(0, 2).join(", ");
+      if (place) onLocationName(place);
+    } catch {
+      // silent fail
+    }
+  };
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     try {
@@ -104,6 +132,7 @@ export default function MapPicker({ lat, lng, onLocationChange }: MapPickerProps
         const newLat = parseFloat(data[0].lat);
         const newLng = parseFloat(data[0].lon);
         onLocationChange(newLat, newLng);
+        reverseGeocode(newLat, newLng);
       }
     } catch {
       // Search failed silently
