@@ -1,100 +1,44 @@
 # GeoCanvas
 
-**Pick any location on Earth. Describe what you want. Get an AI-generated image.**
+**Pick any location on Earth, describe what you want, and get an AI-generated image.**
 
-Drop a pin anywhere on the map, write a prompt (or use the auto-suggested one), and GeoCanvas generates an image using Stable Diffusion XL. Quick-pick scenarios for Paris, New York, Tokyo, and London are included to get started instantly.
-
----
-
-## How It Works
-
-1. **Pick a location** — click the map, drag the pin, or search by name
-2. **Write a prompt** — auto-filled from the location via reverse geocoding, fully editable
-3. **Click Generate** — SDXL runs and returns the generated image
+Drop a pin anywhere on the map and GeoCanvas auto-writes a location-aware prompt (via reverse geocoding) that you
+can edit, then generates the image with Stable Diffusion XL. Quick picks for Paris, New York, Tokyo and London
+get you started instantly.
 
 ```
 Location → Prompt → SDXL → Generated image
 ```
 
----
+## Tech stack
 
-## Tech Stack
+- **AI:** Stable Diffusion XL with Hugging Face Diffusers
+- **Backend:** FastAPI
+- **Frontend:** Next.js 15, React 19, TypeScript, Tailwind CSS, Leaflet maps, Nominatim geocoding
 
-### AI
-- **Stable Diffusion XL** — text-to-image generation
-- **HuggingFace Diffusers** — pipeline orchestration
+## Getting started
 
-### Web
-- **FastAPI** — Python backend
-- **Next.js 15 / React 19** — frontend
-- **TypeScript** — end-to-end type safety
-- **Tailwind CSS** — styling
-- **Leaflet** — interactive maps
-- **Nominatim** — reverse geocoding for automatic location-aware prompts
-
----
-
-## Getting Started
-
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- NVIDIA GPU with 12GB+ VRAM (recommended for SDXL)
-
-### 1. Clone
+Requires Python 3.10+, Node.js 18+, and an NVIDIA GPU with 12 GB+ VRAM (recommended).
 
 ```bash
-git clone https://github.com/LakshmidharKotipalli/geo-canvas.git
-cd geo-canvas
-```
+git clone https://github.com/LakshmidharKotipalli/geo-canvas.git && cd geo-canvas
 
-### 2. Backend
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### 3. Frontend
-
-```bash
-cd ../frontend
-npm install
-```
-
-### 4. Run
-
-```bash
 # Backend
-cd backend && uvicorn app.main:app --reload --port 8000
+cd backend && python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 
-# Frontend (separate terminal)
-cd frontend && npm run dev
+# Frontend (new terminal)
+cd frontend && npm install && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open http://localhost:3000. A self-contained demo with sample images is in `demo/demo.html`.
 
----
-
-## Project Structure
+## Project structure
 
 ```
-geo-canvas/
-├── backend/
-│   ├── app/               # FastAPI routes and SDXL generation service
-│   └── requirements.txt
-├── frontend/
-│   ├── src/app/           # Next.js app router
-│   └── src/components/    # MapPicker, PromptPanel, GeneratedResult
-├── demo/
-│   ├── demo.html          # Self-contained HTML demo
-│   └── images/            # Sample generated images
-└── README.md
+backend/app/            FastAPI routes and SDXL generation service
+frontend/src/app/       Next.js app router
+frontend/src/components MapPicker, PromptPanel, GeneratedResult
+demo/                   Standalone HTML demo and sample images
 ```
-
-
----
-
-*Built by [Lakshmidhar Kotipalli](https://github.com/LakshmidharKotipalli)*
